@@ -4,6 +4,7 @@
  */
 package Modelo;
 
+import Vista.CochesPanel;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
@@ -14,18 +15,21 @@ import java.util.concurrent.Semaphore;
  */
 public class Tractor implements Runnable {
 
-    private static int contador = 0;
+    
     private int estado;
     private int id;
     private List<Semaphore> semaforos;
     private Object[] fase;
+    private CochesPanel cochesPanel;
+    private boolean finish;
 
-    public Tractor(List<Semaphore> semaforos, Object[] fase) {
+    public Tractor(int id, List<Semaphore> semaforos, Object[] fase, CochesPanel cochesPanel) {
         estado = -1;
-        this.id = contador;
+        this.id = id;
         this.semaforos = semaforos;
         this.fase = fase;
-        contador++;
+        this.cochesPanel = cochesPanel;
+        finish = false;
     }
 
     @Override
@@ -35,21 +39,28 @@ public class Tractor implements Runnable {
             semaforos.get(0).acquire();
             estado = 0;
             fase[0] = this;
+            cochesPanel.repaint();
             Thread.sleep(2000 + rd.nextInt(1000));
             semaforos.get(1).acquire();
+            fase[0] = null;
             estado = 1;
             fase[1] = this;
+            cochesPanel.repaint(); 
             Thread.sleep(2000 + rd.nextInt(1000));
             semaforos.get(2).acquire();
-            fase[0] = null;
+            fase[1] = null;
             semaforos.get(0).release();
             estado = 2;
             fase[2] = this;
+            cochesPanel.repaint();
             Thread.sleep(2000 + rd.nextInt(1000));
-            fase[1] = null;
             fase[2] = null;
+            estado = -1;
+            finish = true;
             semaforos.get(1).release();
             semaforos.get(2).release();
+     
+            cochesPanel.repaint();
         } catch (InterruptedException ex) {
             System.getLogger(Tractor.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
         }
@@ -59,5 +70,15 @@ public class Tractor implements Runnable {
     public int getIdent(){
         return id;
     }
+
+    public int getEstado() {
+        return estado;
+    }
+
+    public boolean isFinish() {
+        return finish;
+    }
+    
+    
 
 }
